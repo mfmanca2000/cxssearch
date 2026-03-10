@@ -1,26 +1,33 @@
 /** @type {import('tailwindcss').Config} */
 export default {
-  content: ['./index.html', './src/**/*.{ts,tsx}'],
+  content: [
+    './app/**/*.{ts,tsx}',
+    './components/**/*.{ts,tsx}',
+    './hooks/**/*.{ts,tsx}',
+    './context/**/*.{ts,tsx}',
+    // Legacy src/ kept for reference
+    './src/**/*.{ts,tsx}',
+  ],
   theme: {
     extend: {
       colors: {
         brand: {
-          50:  '#f5f3ff',
-          100: '#ede9fe',
-          200: '#ddd6fe',
-          300: '#c4b5fd',
-          400: '#a78bfa',
-          500: '#8b5cf6',
-          600: '#7c3aed',
-          700: '#6d28d9',
-          800: '#5b21b6',
-          900: '#4c1d95',
+          50:  '#eff6ff',
+          100: '#dbeafe',
+          200: '#bfdbfe',
+          300: '#93c5fd',
+          400: '#3b82f6',
+          500: '#2563eb',
+          600: '#1d4ed8',
+          700: '#1e40af',
+          800: '#1e3a8a',
+          900: '#1b2a4a',
         },
         surface: {
-          900: '#07071a',
-          800: '#0d0d2b',
-          700: '#12123a',
-          600: '#1a1a4a',
+          50:  '#f8fafc',
+          100: '#f1f5f9',
+          200: '#e2e8f0',
+          300: '#cbd5e1',
         },
       },
       fontFamily: {
@@ -36,9 +43,9 @@ export default {
         xs: '2px',
       },
       animation: {
-        'gradient-x': 'gradient-x 12s ease infinite',
-        'pulse-slow': 'pulse 4s cubic-bezier(0.4, 0, 0.6, 1) infinite',
-        'float': 'float 6s ease-in-out infinite',
+        'gradient-x':  'gradient-x 12s ease infinite',
+        'pulse-slow':  'pulse 4s cubic-bezier(0.4, 0, 0.6, 1) infinite',
+        'float':       'float 6s ease-in-out infinite',
       },
       keyframes: {
         'gradient-x': {
@@ -51,9 +58,9 @@ export default {
         },
       },
       boxShadow: {
-        glass: '0 4px 24px 0 rgba(0,0,0,0.4), inset 0 1px 0 rgba(255,255,255,0.06)',
-        glow:  '0 0 20px rgba(139,92,246,0.4)',
-        'glow-cyan': '0 0 20px rgba(6,182,212,0.4)',
+        glass:      '0 4px 24px 0 rgba(0,0,0,0.4), inset 0 1px 0 rgba(255,255,255,0.06)',
+        glow:       '0 0 20px rgba(139,92,246,0.4)',
+        'glow-cyan':'0 0 20px rgba(6,182,212,0.4)',
       },
     },
   },

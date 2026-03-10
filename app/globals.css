@@ -1,0 +1,82 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* ── Global ─────────────────────────────────────────────────────────────────── */
+
+*, *::before, *::after { box-sizing: border-box; }
+
+html { color-scheme: light; }
+
+body {
+  margin: 0;
+  font-family: 'Inter', ui-sans-serif, system-ui, -apple-system, sans-serif;
+  background: #f4f7fb;
+  color: #1b2a4a;
+  overflow-x: hidden;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* ── Scrollbar ────────────────────────────────────────────────────────────────*/
+
+::-webkit-scrollbar               { width: 6px; height: 6px; }
+::-webkit-scrollbar-track         { background: transparent; }
+::-webkit-scrollbar-thumb         { background: rgba(27,42,74,0.15); border-radius: 99px; }
+::-webkit-scrollbar-thumb:hover   { background: rgba(27,42,74,0.25); }
+
+/* ── Sidebar ─────────────────────────────────────────────────────────────────*/
+
+.sidebar {
+  background: #ffffff;
+  border-right: 1px solid #e2e8f0;
+}
+
+/* ── Focus ring ──────────────────────────────────────────────────────────────*/
+
+:focus-visible {
+  outline: 2px solid rgba(37,99,235,0.5);
+  outline-offset: 2px;
+  border-radius: 6px;
+}
+
+/* ── Prose (markdown) ────────────────────────────────────────────────────────*/
+
+.prose-dark {
+  color: #334155;
+}
+.prose-dark h1, .prose-dark h2, .prose-dark h3 {
+  color: #1b2a4a;
+  font-weight: 600;
+}
+.prose-dark a {
+  color: #2563eb;
+  text-decoration: underline;
+}
+.prose-dark code {
+  background: rgba(27,42,74,0.06);
+  padding: 0.1em 0.35em;
+  border-radius: 4px;
+  font-size: 0.9em;
+}
+.prose-dark pre {
+  background: #f1f5f9;
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+  padding: 1rem;
+  overflow-x: auto;
+}
+.prose-dark pre code {
+  background: transparent;
+  padding: 0;
+}
+.prose-dark blockquote {
+  border-left: 3px solid rgba(37,99,235,0.4);
+  padding-left: 1rem;
+  color: #64748b;
+}
+.prose-dark ul, .prose-dark ol {
+  padding-left: 1.5rem;
+}
+.prose-dark li + li {
+  margin-top: 0.25rem;
+}
