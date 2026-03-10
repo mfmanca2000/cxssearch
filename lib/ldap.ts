@@ -100,8 +100,9 @@ export async function ldapGetUsers(baseDN: string): Promise<User[]> {
     const allUsers = getNeliData().users
     const seen     = new Set<string>()
 
+    const isDN = baseDN.includes('=')
     users = (
-      baseDN
+      baseDN && !isDN
         ? allUsers.filter((u) => {
             const dept = u.department ?? ''
             return dept === baseDN || dept.startsWith(baseDN + '-')
