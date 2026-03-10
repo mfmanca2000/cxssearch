@@ -4,6 +4,18 @@ import { useQuery } from '@tanstack/react-query'
 import { AnimatePresence, motion } from 'framer-motion'
 import { Users, AlertCircle, Info } from 'lucide-react'
 import type { OrgNode, User } from '@/types'
+
+/** True when the user belongs directly to the selected node (not a sub-node). */
+function isDirectUser(user: User, selectedDN: string): boolean {
+  if (!selectedDN) return true
+  if (selectedDN.includes('=')) {
+    // LDAP DN mode: strip the first RDN (cn=...) and compare parent to selectedDN
+    const parentDN = user.dn.replace(/^[^,]+,/, '')
+    return parentDN.toLowerCase() === selectedDN.toLowerCase()
+  }
+  // Dept-code mode: exact department match
+  return user.department === selectedDN
+}
 import { useSearch, useFilterOptions, type ActiveFilters } from '@/hooks/useSearch'
 import { OrgTreePanel } from './OrgTreePanel'
 import { SearchBar } from './SearchBar'
@@ -113,6 +125,15 @@ export function PeopleSearch() {
 
   const allUsers = usersQuery.data ?? []
   const filtered = useSearch(allUsers, query, filters)
+
+  const directFiltered = useMemo(
+    () => filtered.filter((u) => isDirectUser(u, selectedDN)),
+    [filtered, selectedDN],
+  )
+  const subFiltered = useMemo(
+    () => filtered.filter((u) => !isDirectUser(u, selectedDN)),
+    [filtered, selectedDN],
+  )
 
   // Faceted filter options: each dimension only shows values present in
   // users that satisfy the OTHER two active filters, so clicking any chip
@@ -229,16 +250,41 @@ export function PeopleSearch() {
               {filtered.length === 0 ? (
                 <EmptyState query={query} />
               ) : (
-                <motion.div
-                  layout
-                  className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4 gap-4"
-                >
-                  <AnimatePresence mode="popLayout">
-                    {filtered.map((u, i) => (
-                      <UserCard key={u.dn} user={u} index={i} onClick={setActiveUser} />
-                    ))}
-                  </AnimatePresence>
-                </motion.div>
+                <>
+                  <motion.div
+                    layout
+                    className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4 gap-4"
+                  >
+                    <AnimatePresence mode="popLayout">
+                      {directFiltered.map((u, i) => (
+                        <UserCard key={u.dn} user={u} index={i} onClick={setActiveUser} />
+                      ))}
+                    </AnimatePresence>
+                  </motion.div>
+
+                  {directFiltered.length > 0 && subFiltered.length > 0 && (
+                    <div className="flex items-center gap-3 my-5">
+                      <div className="flex-1 h-px bg-[#e2e8f0]" />
+                      <span className="text-xs font-medium text-slate-400 shrink-0">
+                        Also in sub-teams
+                      </span>
+                      <div className="flex-1 h-px bg-[#e2e8f0]" />
+                    </div>
+                  )}
+
+                  {subFiltered.length > 0 && (
+                    <motion.div
+                      layout
+                      className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4 gap-4"
+                    >
+                      <AnimatePresence mode="popLayout">
+                        {subFiltered.map((u, i) => (
+                          <UserCard key={u.dn} user={u} index={directFiltered.length + i} onClick={setActiveUser} />
+                        ))}
+                      </AnimatePresence>
+                    </motion.div>
+                  )}
+                </>
               )}
             </>
           )}
