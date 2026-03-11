@@ -10,7 +10,7 @@ export interface SessionData {
 
 export const sessionOptions: SessionOptions = {
   password: process.env.SESSION_SECRET ?? 'changeme-at-least-32-chars-long!!',
-  cookieName: 'csxsearch_session',
+  cookieName: 'cxssearch_session',
   cookieOptions: {
     secure:   process.env.NODE_ENV === 'production',
     httpOnly: true,
