@@ -2,6 +2,8 @@
 import { useState, useTransition } from 'react'
 import { ChevronUp, ChevronDown } from 'lucide-react'
 import { voteQuestion, voteAnswer } from '@/app/actions/qa'
+import { Button } from '@/components/ui/button'
+import { cn } from '@/lib/utils'
 
 interface Props {
   targetType: 'question' | 'answer'
@@ -29,35 +31,40 @@ export function VoteButtons({ targetType, targetId, score, vertical = true }: Pr
     })
   }
 
-  const base = 'p-1 rounded transition-colors hover:bg-white/10 disabled:opacity-40'
   const containerCls = vertical
     ? 'flex flex-col items-center gap-1'
     : 'flex items-center gap-2'
 
   return (
     <div className={containerCls}>
-      <button
+      <Button
+        variant="ghost"
+        size="icon"
         onClick={() => vote(1)}
         disabled={isPending}
-        className={`${base} text-slate-400 hover:text-emerald-400`}
+        className="h-7 w-7 text-slate-400 hover:text-emerald-600"
         aria-label="Upvote"
       >
         <ChevronUp className="w-5 h-5" />
-      </button>
+      </Button>
       <span
-        className="text-sm font-semibold min-w-[1.5rem] text-center"
-        style={{ color: optimisticScore > 0 ? '#34d399' : optimisticScore < 0 ? '#f87171' : '#94a3b8' }}
+        className={cn(
+          'text-sm font-semibold min-w-[1.5rem] text-center',
+          optimisticScore > 0 ? 'text-emerald-600' : optimisticScore < 0 ? 'text-red-500' : 'text-slate-400',
+        )}
       >
         {optimisticScore}
       </span>
-      <button
+      <Button
+        variant="ghost"
+        size="icon"
         onClick={() => vote(-1)}
         disabled={isPending}
-        className={`${base} text-slate-400 hover:text-red-400`}
+        className="h-7 w-7 text-slate-400 hover:text-red-500"
         aria-label="Downvote"
       >
         <ChevronDown className="w-5 h-5" />
-      </button>
+      </Button>
     </div>
   )
 }

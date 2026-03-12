@@ -1,9 +1,11 @@
 'use client'
 import Link from 'next/link'
 import { motion } from 'framer-motion'
-import { MessageSquare, Eye, CheckCircle2, Clock } from 'lucide-react'
+import { MessageSquare, Eye } from 'lucide-react'
 import type { Question } from '@/types'
 import { TagChip } from './TagChip'
+import { Card } from '@/components/ui/card'
+import { Badge } from '@/components/ui/badge'
 
 interface Props {
   question: Question
@@ -11,12 +13,6 @@ interface Props {
 }
 
 export function QuestionCard({ question, index = 0 }: Props) {
-  const statusColors: Record<string, string> = {
-    open:     '#94a3b8',
-    answered: '#34d399',
-    closed:   '#f87171',
-  }
-
   return (
     <motion.div
       initial={{ opacity: 0, y: 12 }}
@@ -24,32 +20,23 @@ export function QuestionCard({ question, index = 0 }: Props) {
       transition={{ duration: 0.2, delay: Math.min(index * 0.04, 0.3) }}
     >
       <Link href={`/qa/questions/${question.id}`}>
-        <div
-          className="group p-5 rounded-2xl border transition-all duration-200 hover:border-brand-500/40 cursor-pointer"
-          style={{
-            background: 'rgba(255,255,255,0.025)',
-            border:     '1px solid rgba(255,255,255,0.07)',
-          }}
-        >
+        <Card className="px-5 py-4 hover:ring-brand-300 transition-all cursor-pointer group">
           {/* Header row */}
           <div className="flex items-start gap-3">
             {/* Vote score */}
             <div className="shrink-0 flex flex-col items-center">
-              <span
-                className="text-lg font-bold"
-                style={{ color: Number(question.vote_score) > 0 ? '#34d399' : '#64748b' }}
-              >
+              <span className={`text-lg font-bold ${Number(question.vote_score) > 0 ? 'text-emerald-600' : 'text-slate-400'}`}>
                 {question.vote_score ?? 0}
               </span>
-              <span className="text-xs text-slate-600">votes</span>
+              <span className="text-xs text-slate-500">votes</span>
             </div>
 
             <div className="flex-1 min-w-0">
-              <h3 className="font-semibold text-slate-700 group-hover:text-brand-300 transition-colors line-clamp-2 leading-snug">
+              <h3 className="font-semibold text-slate-700 group-hover:text-brand-600 transition-colors line-clamp-2 leading-snug">
                 {question.title}
               </h3>
               <p className="text-xs text-slate-500 mt-1">
-                by <span className="text-slate-400">{question.author_cn}</span>{' '}
+                by <span className="text-slate-600">{question.author_cn}</span>{' '}
                 · {new Date(question.created_at).toLocaleDateString()}
               </p>
             </div>
@@ -57,9 +44,9 @@ export function QuestionCard({ question, index = 0 }: Props) {
             {/* Status badge */}
             <div className="shrink-0">
               {question.status === 'answered' ? (
-                <CheckCircle2 className="w-5 h-5" style={{ color: statusColors.answered }} />
+                <Badge className="bg-emerald-100 text-emerald-700 border border-emerald-200">Answered</Badge>
               ) : (
-                <Clock className="w-5 h-5" style={{ color: statusColors[question.status] ?? '#94a3b8' }} />
+                <Badge variant="outline">Open</Badge>
               )}
             </div>
           </div>
@@ -82,7 +69,7 @@ export function QuestionCard({ question, index = 0 }: Props) {
               </span>
             </div>
           </div>
-        </div>
+        </Card>
       </Link>
     </motion.div>
   )

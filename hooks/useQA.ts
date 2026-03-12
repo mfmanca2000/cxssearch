@@ -6,11 +6,12 @@ const API = '/api/qa'
 
 // ─── Questions ────────────────────────────────────────────────────────────────
 
-export function useQuestions(params?: { tag?: string; status?: string; page?: number }) {
+export function useQuestions(params?: { tag?: string; status?: string; page?: number; sort?: 'newest' | 'votes' | 'active' }) {
   const search = new URLSearchParams()
   if (params?.tag)    search.set('tag',    params.tag)
   if (params?.status) search.set('status', params.status)
   if (params?.page)   search.set('page',   String(params.page))
+  if (params?.sort)   search.set('sort',   params.sort)
 
   return useQuery<Question[]>({
     queryKey: ['qa', 'questions', params],

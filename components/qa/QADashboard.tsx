@@ -5,18 +5,25 @@ import { MessageSquare, Inbox, Users } from 'lucide-react'
 import { useQuestions, useTags, useInbox, useMarkInboxRead, type InboxItem } from '@/hooks/useQA'
 import { QuestionCard } from './QuestionCard'
 import { TagChip } from './TagChip'
+import { Badge } from '@/components/ui/badge'
+import { Button } from '@/components/ui/button'
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
+import { cn } from '@/lib/utils'
 
 type Tab = 'all' | 'inbox' | 'team'
+type SortOption = 'newest' | 'votes' | 'active'
 
 export function QADashboard() {
   const [tab,          setTab]          = useState<Tab>('all')
   const [activeTag,    setActiveTag]    = useState<string>('')
   const [activeStatus, setActiveStatus] = useState<string>('')
+  const [sort,         setSort]         = useState<SortOption>('newest')
   const [page,         setPage]         = useState(1)
 
   const { data: questions, isLoading, isError } = useQuestions({
     tag:    activeTag    || undefined,
     status: activeStatus || undefined,
+    sort,
     page,
   })
   const { data: tags }  = useTags()
@@ -34,14 +41,19 @@ export function QADashboard() {
   const personalUnread    = inbox?.personal.unread    ?? 0
   const teamQuestions     = inbox?.team.questions     ?? []
   const teamUnread        = inbox?.team.unread        ?? 0
-  const teamOuLabel       = inbox?.team.teamOu
-    ? inbox.team.teamOu.split(',')[0]?.replace(/^OU=/i, '') ?? 'My Team'
-    : 'My Team'
+  const teamOuLabel = (() => {
+    const ou = inbox?.team.teamOu
+    if (!ou) return 'My Team'
+    // Department-code format: "SCS-B2B-TBS-CXS" → last segment "CXS"
+    if (!ou.includes('=')) return ou.split('-').pop() ?? ou
+    // LDAP DN format: "OU=Foo,OU=Bar,..." → first component
+    return ou.split(',')[0]?.replace(/^OU=/i, '') ?? 'My Team'
+  })()
 
   return (
     <div className="flex-1 overflow-y-auto px-6 py-5 space-y-6">
       {/* Tab bar */}
-      <div className="flex border-b" style={{ borderColor: '#e2e8f0' }}>
+      <div className="flex border-b border-border -mx-6 px-6">
         {([
           { id: 'all',   icon: MessageSquare, label: 'All questions', badge: 0 },
           { id: 'inbox', icon: Inbox,         label: 'For me',        badge: personalUnread },
@@ -50,20 +62,19 @@ export function QADashboard() {
           <button
             key={id}
             onClick={() => setTab(id)}
-            className="flex items-center gap-2 px-5 py-3 text-sm font-semibold transition-all"
-            style={tab === id
-              ? { color: '#1b2a4a', borderBottom: '2px solid #1b2a4a', marginBottom: '-1px' }
-              : { color: '#94a3b8', borderBottom: '2px solid transparent', marginBottom: '-1px' }}
+            className={cn(
+              'flex items-center gap-2 px-5 py-3 text-sm font-semibold transition-all -mb-px border-b-2',
+              tab === id
+                ? 'text-foreground border-foreground'
+                : 'text-muted-foreground border-transparent hover:text-slate-600',
+            )}
           >
             <Icon className="w-4 h-4" />
             {label}
             {badge > 0 && (
-              <span
-                className="text-xs font-bold px-1.5 py-0.5 rounded-full min-w-[1.25rem] text-center leading-none"
-                style={{ background: '#ef4444', color: '#fff' }}
-              >
+              <Badge variant="destructive" className="text-xs min-w-[1.25rem] text-center px-1.5 py-0">
                 {badge > 9 ? '9+' : badge}
-              </span>
+              </Badge>
             )}
           </button>
         ))}
@@ -73,7 +84,7 @@ export function QADashboard() {
       {tab === 'inbox' && (
         <InboxList
           questions={personalQuestions}
-          emptyIcon={<Inbox className="w-12 h-12 mx-auto mb-4 opacity-20" style={{ color: '#94a3b8' }} />}
+          emptyIcon={<Inbox className="w-12 h-12 mx-auto mb-4 text-slate-300" />}
           emptyText="No questions directed at you yet"
           emptySubtext="When someone asks you a question directly, it will appear here."
           showUnreadDot={(q) => !q.notified_at}
@@ -84,7 +95,7 @@ export function QADashboard() {
       {tab === 'team' && (
         <InboxList
           questions={teamQuestions}
-          emptyIcon={<Users className="w-12 h-12 mx-auto mb-4 opacity-20" style={{ color: '#94a3b8' }} />}
+          emptyIcon={<Users className="w-12 h-12 mx-auto mb-4 text-slate-300" />}
           emptyText={`No questions directed at ${teamOuLabel} yet`}
           emptySubtext="When someone asks your team a question, it will appear here."
           showUnreadDot={() => false}
@@ -93,25 +104,39 @@ export function QADashboard() {
 
       {/* ── All questions tab ── */}
       {tab === 'all' && (
-        <>
+        <div className="space-y-4">
           {/* Filters */}
           <div className="flex flex-wrap gap-3 items-center">
             <div className="flex gap-2">
-              {['', 'open', 'answered'].map((s) => (
+              {(['', 'open', 'answered'] as const).map((s) => (
                 <button
                   key={s}
                   onClick={() => { setActiveStatus(s); setPage(1) }}
-                  className="text-xs px-3 py-1.5 rounded-full border transition-all"
-                  style={
+                  className={cn(
+                    'text-xs px-3 py-1.5 rounded-full border transition-all',
                     activeStatus === s
-                      ? { background: 'rgba(139,92,246,0.2)', borderColor: 'rgba(139,92,246,0.5)', color: '#c4b5fd' }
-                      : { background: 'rgba(255,255,255,0.03)', borderColor: 'rgba(255,255,255,0.08)', color: '#64748b' }
-                  }
+                      ? 'bg-brand-100 border-brand-300 text-brand-700 font-medium'
+                      : 'bg-white border-border text-slate-500 hover:border-brand-200 hover:text-slate-700',
+                  )}
                 >
                   {s === '' ? 'All' : s.charAt(0).toUpperCase() + s.slice(1)}
                 </button>
               ))}
             </div>
+
+            <Select
+              value={sort}
+              onValueChange={(v) => { setSort(v as SortOption); setPage(1) }}
+            >
+              <SelectTrigger className="w-36 h-7 text-xs">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="newest">Newest</SelectItem>
+                <SelectItem value="votes">Most Voted</SelectItem>
+                <SelectItem value="active">Active</SelectItem>
+              </SelectContent>
+            </Select>
 
             {tags && tags.length > 0 && (
               <div className="flex flex-wrap gap-1.5">
@@ -119,6 +144,7 @@ export function QADashboard() {
                   <button
                     key={t.tag}
                     onClick={() => { setActiveTag(activeTag === t.tag ? '' : t.tag); setPage(1) }}
+                    className={cn(activeTag === t.tag && 'ring-2 ring-brand-400 rounded-full')}
                   >
                     <TagChip tag={t.tag} count={t.question_count} />
                   </button>
@@ -130,7 +156,7 @@ export function QADashboard() {
           {isLoading && (
             <div className="space-y-3">
               {[...Array(5)].map((_, i) => (
-                <div key={i} className="h-24 rounded-2xl animate-pulse" style={{ background: 'rgba(255,255,255,0.03)' }} />
+                <div key={i} className="h-24 rounded-xl animate-pulse bg-slate-100" />
               ))}
             </div>
           )}
@@ -147,8 +173,8 @@ export function QADashboard() {
               {!questions?.length ? (
                 <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="text-center py-20">
                   <MessageSquare className="w-12 h-12 mx-auto mb-4 text-brand-600 opacity-40" />
-                  <p className="text-slate-300 font-medium">No questions yet</p>
-                  <p className="text-slate-600 text-sm mt-1">Be the first to ask a question!</p>
+                  <p className="text-slate-500 font-medium">No questions yet</p>
+                  <p className="text-slate-400 text-sm mt-1">Be the first to ask a question!</p>
                 </motion.div>
               ) : (
                 <div className="space-y-3">
@@ -161,18 +187,18 @@ export function QADashboard() {
               {(questions?.length ?? 0) === 20 && (
                 <div className="flex justify-center gap-3 pt-4">
                   {page > 1 && (
-                    <button onClick={() => setPage((p) => p - 1)} className="text-xs px-4 py-2 rounded-lg text-slate-400 border border-slate-700 hover:bg-white/5 transition-colors">
+                    <Button variant="outline" size="sm" onClick={() => setPage((p) => p - 1)}>
                       ← Previous
-                    </button>
+                    </Button>
                   )}
-                  <button onClick={() => setPage((p) => p + 1)} className="text-xs px-4 py-2 rounded-lg text-slate-400 border border-slate-700 hover:bg-white/5 transition-colors">
+                  <Button variant="outline" size="sm" onClick={() => setPage((p) => p + 1)}>
                     Next →
-                  </button>
+                  </Button>
                 </div>
               )}
             </>
           )}
-        </>
+        </div>
       )}
     </div>
   )
@@ -197,8 +223,8 @@ function InboxList({
     return (
       <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="text-center py-20">
         {emptyIcon}
-        <p className="text-slate-400 font-medium">{emptyText}</p>
-        <p className="text-slate-600 text-sm mt-1">{emptySubtext}</p>
+        <p className="text-slate-500 font-medium">{emptyText}</p>
+        <p className="text-slate-400 text-sm mt-1">{emptySubtext}</p>
       </motion.div>
     )
   }
@@ -207,7 +233,7 @@ function InboxList({
       {questions.map((q, i) => (
         <div key={q.id} className="relative">
           {showUnreadDot(q) && (
-            <span className="absolute -left-2 top-4 w-2 h-2 rounded-full z-10" style={{ background: '#ef4444' }} />
+            <span className="absolute -left-2 top-4 w-2 h-2 rounded-full z-10 bg-destructive" />
           )}
           <QuestionCard question={q} index={i} />
         </div>

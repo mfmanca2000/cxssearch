@@ -8,6 +8,11 @@ import { SimilarQuestions } from './SimilarQuestions'
 import { TagChip } from './TagChip'
 import { useExperts, useTags } from '@/hooks/useQA'
 import type { OrgNode } from '@/types'
+import { Button } from '@/components/ui/button'
+import { Input } from '@/components/ui/input'
+import { Badge } from '@/components/ui/badge'
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
+import { cn } from '@/lib/utils'
 
 /** Flatten an OrgNode tree into a list of { dn, label } for all non-root nodes. */
 function flattenTree(node: OrgNode, depth = 0, parentPath = ''): { dn: string; label: string; depth: number }[] {
@@ -97,10 +102,7 @@ export function QuestionForm() {
     <form onSubmit={handleSubmit} className="space-y-6 max-w-3xl mx-auto">
 
       {expertName && (
-        <div
-          className="flex items-center gap-3 px-4 py-3 rounded-xl text-sm"
-          style={{ background: 'rgba(139,92,246,0.1)', border: '1px solid rgba(139,92,246,0.3)', color: '#c4b5fd' }}
-        >
+        <div className="flex items-center gap-3 px-4 py-3 rounded-xl text-sm bg-brand-50 border border-brand-200 text-brand-700">
           <UserCheck className="w-4 h-4 shrink-0" />
           Directing this question to <strong>{expertName}</strong>
         </div>
@@ -108,14 +110,13 @@ export function QuestionForm() {
 
       {/* Title */}
       <div className="space-y-2">
-        <label className="block text-sm font-medium text-slate-300">Title</label>
-        <input
+        <label className="block text-sm font-medium text-slate-700">Title</label>
+        <Input
           type="text"
           value={title}
           onChange={(e) => setTitle(e.target.value)}
           placeholder="What is your question? Be specific."
-          className="w-full px-4 py-3 rounded-xl text-slate-700 placeholder-slate-500 outline-none text-sm"
-          style={{ background: 'rgba(255,255,255,0.8)', border: '1px solid #cbd5e1' }}
+          className="h-10 text-sm"
           maxLength={200}
           required
         />
@@ -124,8 +125,8 @@ export function QuestionForm() {
 
       {/* Body */}
       <div className="space-y-2">
-        <label className="block text-sm font-medium text-slate-300">Details</label>
-        <div data-color-mode="dark">
+        <label className="block text-sm font-medium text-slate-700">Details</label>
+        <div data-color-mode="light">
           <MDEditor
             value={body}
             onChange={(v) => setBody(v ?? '')}
@@ -137,7 +138,7 @@ export function QuestionForm() {
 
       {/* Tags */}
       <div className="space-y-2">
-        <label className="block text-sm font-medium text-slate-300">
+        <label className="block text-sm font-medium text-slate-700">
           Tags <span className="text-slate-500 font-normal">(up to 5)</span>
         </label>
         <div className="flex flex-wrap gap-2 mb-2">
@@ -157,7 +158,7 @@ export function QuestionForm() {
         </div>
         {tags.length < 5 && (
           <div className="relative flex gap-2">
-            <input
+            <Input
               ref={tagInputRef}
               type="text"
               value={tagInput}
@@ -170,30 +171,26 @@ export function QuestionForm() {
                 if (e.key === 'Escape') setShowTagSuggestions(false)
               }}
               placeholder="Add a tag (Enter or comma)"
-              className="flex-1 px-3 py-2 rounded-lg text-sm text-slate-300 placeholder-slate-500 outline-none"
-              style={{ background: 'rgba(255,255,255,0.8)', border: '1px solid #cbd5e1' }}
+              className="flex-1 text-sm"
             />
-            <button
+            <Button
               type="button"
+              variant="outline"
+              size="icon"
               onClick={() => addTag(tagInput)}
-              className="px-3 py-2 rounded-lg text-slate-400 hover:text-slate-600 transition-colors"
-              style={{ border: '1px solid #cbd5e1' }}
             >
               <Plus className="w-4 h-4" />
-            </button>
+            </Button>
             {showTagSuggestions && tagSuggestions.length > 0 && (
-              <ul
-                className="absolute top-full left-0 mt-1 w-full z-20 rounded-lg overflow-hidden shadow-lg"
-                style={{ background: '#1e293b', border: '1px solid rgba(255,255,255,0.12)' }}
-              >
+              <ul className="absolute top-full left-0 mt-1 w-full z-20 rounded-lg overflow-hidden shadow-lg bg-white border border-input">
                 {tagSuggestions.slice(0, 8).map((t) => (
                   <li key={t.tag}>
                     <button
                       type="button"
                       onMouseDown={(e) => { e.preventDefault(); addTag(t.tag) }}
-                      className="w-full flex items-center justify-between px-3 py-2 text-sm hover:bg-white/10 transition-colors text-left"
+                      className="w-full flex items-center justify-between px-3 py-2 text-sm hover:bg-muted transition-colors text-left"
                     >
-                      <span className="text-slate-200">{t.tag}</span>
+                      <span className="text-slate-700">{t.tag}</span>
                       <span className="text-xs text-slate-500">{t.question_count}q</span>
                     </button>
                   </li>
@@ -206,20 +203,19 @@ export function QuestionForm() {
 
       {/* Expert routing */}
       <div className="space-y-2">
-        <label className="block text-sm font-medium text-slate-300">
+        <label className="block text-sm font-medium text-slate-700">
           Notify experts{' '}
           <span className="text-slate-500 font-normal">(optional)</span>
         </label>
         {/* Expert search */}
         <div className="relative">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-500 pointer-events-none" />
-          <input
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 pointer-events-none" />
+          <Input
             type="text"
             value={expertSearch}
             onChange={(e) => setExpertSearch(e.target.value)}
             placeholder={primaryTag ? `Search experts for "${primaryTag}"…` : 'Search experts by name, title, or skill…'}
-            className="w-full pl-9 pr-4 py-2 rounded-xl text-sm text-slate-300 placeholder-slate-500 outline-none"
-            style={{ background: 'rgba(255,255,255,0.8)', border: '1px solid #cbd5e1' }}
+            className="pl-9 text-sm"
           />
         </div>
         {experts && experts.length > 0 ? (
@@ -227,21 +223,16 @@ export function QuestionForm() {
             {experts.map((exp) => {
               const selected = directedDns.includes(exp.dn)
               return (
-                <button
+                <Badge
                   key={exp.dn}
-                  type="button"
+                  variant={selected ? 'default' : 'outline'}
                   onClick={() => toggleExpert(exp.dn)}
                   title={exp.title ? `${exp.title} · ${exp.department}` : exp.department}
-                  className="flex items-center gap-1.5 text-xs px-3 py-1.5 rounded-full border transition-all"
-                  style={
-                    selected
-                      ? { background: 'rgba(139,92,246,0.2)', borderColor: 'rgba(139,92,246,0.5)', color: '#c4b5fd' }
-                      : { background: '#f8fafc', borderColor: '#cbd5e1', color: '#64748b' }
-                  }
+                  className="cursor-pointer flex items-center gap-1"
                 >
                   {exp.cn}
                   {selected && <X className="w-3 h-3" />}
-                </button>
+                </Badge>
               )
             })}
           </div>
@@ -255,49 +246,49 @@ export function QuestionForm() {
       {/* Team routing */}
       {teams.length > 0 && (
         <div className="space-y-2">
-          <label className="block text-sm font-medium text-slate-300">
+          <label className="block text-sm font-medium text-slate-700">
             Notify a team <span className="text-slate-500 font-normal">(optional)</span>
           </label>
           <div className="relative">
-            <Users className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-500 pointer-events-none" />
-            <select
+            <Users className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 pointer-events-none z-10" />
+            <Select
               value=""
-              onChange={(e) => {
-                const ou = e.target.value
+              onValueChange={(ou) => {
                 if (ou && !directedTeams.includes(ou)) setDirectedTeams((p) => [...p, ou])
               }}
-              className="w-full pl-9 pr-4 py-2 rounded-xl text-sm outline-none appearance-none"
-              style={{ background: 'rgba(255,255,255,0.8)', border: '1px solid #cbd5e1', color: '#94a3b8' }}
             >
-              <option value="">Select a team…</option>
-              {teams.map((t) => (
-                <option key={t.dn} value={t.dn}>
-                  {t.label}
-                </option>
-              ))}
-            </select>
+              <SelectTrigger className="w-full pl-9 h-10 text-sm">
+                <SelectValue placeholder="Select a team…" />
+              </SelectTrigger>
+              <SelectContent>
+                {teams.map((t) => (
+                  <SelectItem key={t.dn} value={t.dn}>
+                    {t.label}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
           </div>
           {directedTeams.length > 0 && (
             <div className="flex flex-wrap gap-2 pt-1">
               {directedTeams.map((ou) => {
                 const team = teams.find((t) => t.dn === ou)
                 return (
-                  <span
+                  <Badge
                     key={ou}
-                    className="flex items-center gap-1.5 text-xs px-3 py-1.5 rounded-full"
-                    style={{ background: 'rgba(6,182,212,0.15)', border: '1px solid rgba(6,182,212,0.35)', color: '#67e8f9' }}
+                    className="bg-brand-50 text-brand-700 border border-brand-200 flex items-center gap-1.5"
                   >
                     <Users className="w-3 h-3" />
                     {team?.label ?? ou}
                     <button
                       type="button"
                       onClick={() => setDirectedTeams((p) => p.filter((d) => d !== ou))}
-                      className="hover:text-red-400 transition-colors"
+                      className="hover:text-destructive transition-colors"
                       aria-label={`Remove team ${team?.label}`}
                     >
                       <X className="w-3 h-3" />
                     </button>
-                  </span>
+                  </Badge>
                 )
               })}
             </div>
@@ -305,17 +296,16 @@ export function QuestionForm() {
         </div>
       )}
 
-      {error && <p className="text-sm text-red-400">{error}</p>}
+      {error && <p className="text-sm text-destructive">{error}</p>}
 
-      <button
+      <Button
         type="submit"
         disabled={isPending}
-        className="flex items-center gap-2 px-6 py-3 rounded-xl font-semibold text-sm text-white transition-all disabled:opacity-50"
-        style={{ background: 'linear-gradient(135deg,#7c3aed,#06b6d4)' }}
+        className="flex items-center gap-2"
       >
         <Send className="w-4 h-4" />
         {isPending ? 'Posting…' : 'Post Question'}
-      </button>
+      </Button>
     </form>
   )
 }

@@ -3,6 +3,7 @@ import { useState, useTransition } from 'react'
 import dynamic from 'next/dynamic'
 import { Send } from 'lucide-react'
 import { postAnswer } from '@/app/actions/qa'
+import { Button } from '@/components/ui/button'
 
 // SSR-disable the markdown editor
 const MDEditor = dynamic(() => import('@uiw/react-md-editor').then((m) => m.default), { ssr: false })
@@ -35,7 +36,7 @@ export function AnswerForm({ questionId, onSuccess }: Props) {
   return (
     <form onSubmit={handleSubmit} className="space-y-4">
       <h3 className="font-semibold text-slate-800">Your Answer</h3>
-      <div data-color-mode="dark">
+      <div data-color-mode="light">
         <MDEditor
           value={body}
           onChange={(v) => setBody(v ?? '')}
@@ -43,16 +44,15 @@ export function AnswerForm({ questionId, onSuccess }: Props) {
           preview="edit"
         />
       </div>
-      {error && <p className="text-xs text-red-400">{error}</p>}
-      <button
+      {error && <p className="text-xs text-destructive">{error}</p>}
+      <Button
         type="submit"
         disabled={isPending || !body.trim()}
-        className="flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-semibold text-white transition-all disabled:opacity-50"
-        style={{ background: 'linear-gradient(135deg,#7c3aed,#06b6d4)' }}
+        className="flex items-center gap-2"
       >
         <Send className="w-4 h-4" />
         {isPending ? 'Posting…' : 'Post Answer'}
-      </button>
+      </Button>
     </form>
   )
 }

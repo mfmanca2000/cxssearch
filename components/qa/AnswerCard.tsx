@@ -3,10 +3,15 @@ import { useState, useTransition } from 'react'
 import { CheckCircle2, Pencil, X, Check } from 'lucide-react'
 import ReactMarkdown from 'react-markdown'
 import remarkGfm from 'remark-gfm'
+import rehypeHighlight from 'rehype-highlight'
 import type { Answer } from '@/types'
 import { useAuth } from '@/hooks/useAuth'
 import { acceptAnswer, updateAnswer } from '@/app/actions/qa'
 import { VoteButtons } from './VoteButtons'
+import { Card } from '@/components/ui/card'
+import { Badge } from '@/components/ui/badge'
+import { Button } from '@/components/ui/button'
+import { cn } from '@/lib/utils'
 
 interface Props {
   answer: Answer
@@ -39,17 +44,16 @@ export function AnswerCard({ answer, questionAuthorDn, onRefetch }: Props) {
   }
 
   return (
-    <div
-      className={`p-5 rounded-2xl relative transition-all ${answer.is_accepted ? 'border-emerald-500/40' : ''}`}
-      style={{
-        background: answer.is_accepted ? 'rgba(16,185,129,0.05)' : 'rgba(255,255,255,0.025)',
-        border:     `1px solid ${answer.is_accepted ? 'rgba(16,185,129,0.3)' : 'rgba(255,255,255,0.07)'}`,
-      }}
-    >
+    <Card className={cn(
+      'p-5 relative transition-all',
+      answer.is_accepted && 'border-emerald-300 bg-emerald-50/50',
+    )}>
       {answer.is_accepted && (
-        <div className="flex items-center gap-1 text-xs text-emerald-400 font-medium mb-3">
-          <CheckCircle2 className="w-4 h-4" />
-          Accepted answer
+        <div className="flex items-center gap-1.5 mb-3">
+          <CheckCircle2 className="w-4 h-4 text-emerald-600" />
+          <Badge className="bg-emerald-100 text-emerald-700 border border-emerald-200">
+            Accepted answer
+          </Badge>
         </div>
       )}
 
@@ -65,60 +69,71 @@ export function AnswerCard({ answer, questionAuthorDn, onRefetch }: Props) {
                 value={editBody}
                 onChange={(e) => setEditBody(e.target.value)}
                 rows={6}
-                className="w-full px-4 py-3 rounded-xl text-sm text-slate-800 bg-transparent outline-none resize-y"
-                style={{ border: '1px solid rgba(255,255,255,0.15)', background: 'rgba(255,255,255,0.04)' }}
+                className="w-full px-4 py-3 rounded-xl text-sm text-slate-800 bg-white border border-input outline-none resize-y"
               />
               <div className="flex gap-2">
-                <button
+                <Button
+                  size="sm"
                   onClick={handleSaveEdit}
                   disabled={isPending}
-                  className="flex items-center gap-1.5 text-xs px-3 py-1.5 rounded-lg text-emerald-400 border border-emerald-500/40 hover:bg-emerald-500/10 transition-colors"
+                  className="flex items-center gap-1.5"
                 >
                   <Check className="w-3.5 h-3.5" /> Save
-                </button>
-                <button
+                </Button>
+                <Button
+                  variant="outline"
+                  size="sm"
                   onClick={() => { setEditing(false); setEditBody(answer.body) }}
-                  className="flex items-center gap-1.5 text-xs px-3 py-1.5 rounded-lg text-slate-400 border border-slate-600 hover:bg-white/5 transition-colors"
+                  className="flex items-center gap-1.5"
                 >
                   <X className="w-3.5 h-3.5" /> Cancel
-                </button>
+                </Button>
               </div>
             </div>
           ) : (
             <div className="prose-dark prose max-w-none text-sm">
-              <ReactMarkdown remarkPlugins={[remarkGfm]}>{answer.body}</ReactMarkdown>
+              <ReactMarkdown remarkPlugins={[remarkGfm]} rehypePlugins={[rehypeHighlight]}>
+                {answer.body}
+              </ReactMarkdown>
             </div>
           )}
 
+          <div className="h-px bg-border my-3" />
+
           {/* Footer */}
-          <div className="flex items-center justify-between mt-3 pt-3" style={{ borderTop: '1px solid rgba(255,255,255,0.05)' }}>
+          <div className="flex items-center justify-between">
             <p className="text-xs text-slate-500">
-              by <span className="text-slate-400">{answer.author_cn}</span>
+              by <span className="text-slate-600">{answer.author_cn}</span>
               {answer.author_title && <> · {answer.author_title}</>}
               {' · '}{new Date(answer.created_at).toLocaleDateString()}
             </p>
             <div className="flex items-center gap-2">
               {isAnswerAuthor && !editing && (
-                <button
+                <Button
+                  variant="ghost"
+                  size="icon"
                   onClick={() => setEditing(true)}
-                  className="flex items-center gap-1 text-xs text-slate-500 hover:text-slate-300 transition-colors"
+                  className="h-6 w-6 text-slate-500"
+                  aria-label="Edit answer"
                 >
-                  <Pencil className="w-3 h-3" /> Edit
-                </button>
+                  <Pencil className="w-3 h-3" />
+                </Button>
               )}
               {isQuestionAuthor && !answer.is_accepted && (
-                <button
+                <Button
+                  variant="outline"
+                  size="sm"
                   onClick={handleAccept}
                   disabled={isPending}
-                  className="flex items-center gap-1 text-xs px-2.5 py-1 rounded-lg text-emerald-400 border border-emerald-500/40 hover:bg-emerald-500/10 transition-colors"
+                  className="text-emerald-600 border-emerald-300 hover:bg-emerald-50 flex items-center gap-1"
                 >
                   <CheckCircle2 className="w-3 h-3" /> Accept
-                </button>
+                </Button>
               )}
             </div>
           </div>
         </div>
       </div>
-    </div>
+    </Card>
   )
 }

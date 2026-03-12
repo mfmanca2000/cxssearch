@@ -1,5 +1,6 @@
 'use client'
 import Link from 'next/link'
+import { Badge } from '@/components/ui/badge'
 
 interface Props {
   tag: string
@@ -9,24 +10,15 @@ interface Props {
 }
 
 export function TagChip({ tag, count, linked = false, size = 'sm' }: Props) {
-  const cls = size === 'md'
-    ? 'text-sm px-3 py-1.5'
-    : 'text-xs px-2.5 py-1'
-
   const inner = (
-    <span
-      className={`inline-flex items-center gap-1 ${cls} rounded-full font-medium cursor-pointer transition-all duration-150 hover:border-brand-500`}
-      style={{
-        background:   'rgba(139,92,246,0.1)',
-        color:        '#c4b5fd',
-        border:       '1px solid rgba(139,92,246,0.25)',
-      }}
+    <Badge
+      className={`bg-brand-50 text-brand-700 border border-brand-200 hover:bg-brand-100 cursor-pointer font-medium ${size === 'md' ? 'text-sm px-3 py-1.5' : ''}`}
     >
       {tag}
       {count !== undefined && (
-        <span className="text-brand-400 opacity-70">×{count}</span>
+        <span className="text-brand-500 opacity-70 ml-0.5">×{count}</span>
       )}
-    </span>
+    </Badge>
   )
 
   if (linked) {
