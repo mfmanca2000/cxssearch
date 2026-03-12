@@ -1,5 +1,6 @@
 'use client'
 import { useState, useTransition, useEffect, useRef } from 'react'
+import { createPortal } from 'react-dom'
 import { useRouter, useSearchParams } from 'next/navigation'
 import dynamic from 'next/dynamic'
 import { X, Plus, Send, UserCheck, Users, Search } from 'lucide-react'
@@ -7,7 +8,13 @@ import { postQuestion } from '@/app/actions/qa'
 import { SimilarQuestions } from './SimilarQuestions'
 import { TagChip } from './TagChip'
 import { useExperts, useTags } from '@/hooks/useQA'
-import type { OrgNode } from '@/types'
+import { SKILL_CATEGORIES } from '@/lib/skills'
+import type { OrgNode, TagStat } from '@/types'
+
+// Flat list of all static skills as TagStat entries (source: 'skill', question_count: 0)
+const STATIC_SKILL_SUGGESTIONS: TagStat[] = SKILL_CATEGORIES.flatMap((c) =>
+  c.skills.map((s) => ({ tag: s.toLowerCase(), question_count: 0, source: 'skill' as const })),
+)
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Badge } from '@/components/ui/badge'
@@ -45,6 +52,12 @@ export function QuestionForm() {
   const [error,        setError]        = useState('')
   const [isPending,    startTransition] = useTransition()
   const tagInputRef = useRef<HTMLInputElement>(null)
+  const [mounted,        setMounted]        = useState(false)
+  const [suggestPos,     setSuggestPos]     = useState<{ top: number; left: number; width: number } | null>(null)
+  const [highlightIndex, setHighlightIndex] = useState(-1)
+
+  useEffect(() => setMounted(true), [])
+  useEffect(() => setHighlightIndex(-1), [tagInput])
 
   // Load org tree for team selector
   useEffect(() => {
@@ -54,19 +67,19 @@ export function QuestionForm() {
       .catch(() => {})
   }, [])
 
-  // Tag autocomplete
+  // Tag autocomplete: DB tags/skills first, then static taxonomy (no duplicates)
   const { data: allTags } = useTags()
-  const tagSuggestions = allTags
-    ?.filter((t) => t.tag.includes(tagInput.toLowerCase().trim()) && !tags.includes(t.tag))
-    ?? []
+  const tagSuggestions = (() => {
+    const q = tagInput.toLowerCase().trim()
+    const dbResults = (allTags ?? []).filter((t) => t.tag.includes(q) && !tags.includes(t.tag))
+    const dbTags = new Set(dbResults.map((t) => t.tag))
+    const staticResults = STATIC_SKILL_SUGGESTIONS.filter(
+      (t) => t.tag.includes(q) && !tags.includes(t.tag) && !dbTags.has(t.tag),
+    )
+    return [...dbResults, ...staticResults]
+  })()
 
-  // Expert suggestions: filtered by first tag + optional free-text search
-  const primaryTag = tags[0] ?? ''
-  const { data: experts } = useExperts(
-    primaryTag || expertSearch
-      ? { tag: primaryTag || undefined, q: expertSearch || undefined }
-      : undefined,
-  )
+  const { data: experts } = useExperts(expertSearch ? { q: expertSearch } : undefined)
 
   const addTag = (t: string) => {
     const clean = t.trim().toLowerCase().replace(/\s+/g, '-')
@@ -162,13 +175,42 @@ export function QuestionForm() {
               ref={tagInputRef}
               type="text"
               value={tagInput}
-              onChange={(e) => { setTagInput(e.target.value); setShowTagSuggestions(true) }}
-              onFocus={() => setShowTagSuggestions(true)}
+              onChange={(e) => {
+                setTagInput(e.target.value)
+                setShowTagSuggestions(true)
+                if (tagInputRef.current) {
+                  const r = tagInputRef.current.getBoundingClientRect()
+                  setSuggestPos({ top: r.bottom + 4, left: r.left, width: r.width })
+                }
+              }}
+              onFocus={() => {
+                setShowTagSuggestions(true)
+                if (tagInputRef.current) {
+                  const r = tagInputRef.current.getBoundingClientRect()
+                  setSuggestPos({ top: r.bottom + 4, left: r.left, width: r.width })
+                }
+              }}
               onBlur={() => setTimeout(() => setShowTagSuggestions(false), 150)}
               onKeyDown={(e) => {
-                if (e.key === 'Enter') { e.preventDefault(); addTag(tagInput) }
-                if (e.key === ',')     { e.preventDefault(); addTag(tagInput) }
-                if (e.key === 'Escape') setShowTagSuggestions(false)
+                const visible = tagSuggestions.slice(0, 8)
+                if (e.key === 'ArrowDown') {
+                  e.preventDefault()
+                  setHighlightIndex((i) => (i + 1) % visible.length)
+                } else if (e.key === 'ArrowUp') {
+                  e.preventDefault()
+                  setHighlightIndex((i) => (i <= 0 ? visible.length - 1 : i - 1))
+                } else if (e.key === 'Enter') {
+                  e.preventDefault()
+                  if (highlightIndex >= 0 && visible[highlightIndex]) {
+                    addTag(visible[highlightIndex].tag)
+                  } else {
+                    addTag(tagInput)
+                  }
+                } else if (e.key === ',') {
+                  e.preventDefault(); addTag(tagInput)
+                } else if (e.key === 'Escape') {
+                  setShowTagSuggestions(false)
+                }
               }}
               placeholder="Add a tag (Enter or comma)"
               className="flex-1 text-sm"
@@ -181,22 +223,33 @@ export function QuestionForm() {
             >
               <Plus className="w-4 h-4" />
             </Button>
-            {showTagSuggestions && tagSuggestions.length > 0 && (
-              <ul className="absolute top-full left-0 mt-1 w-full z-20 rounded-lg overflow-hidden shadow-lg bg-white border border-input">
-                {tagSuggestions.slice(0, 8).map((t) => (
-                  <li key={t.tag}>
-                    <button
-                      type="button"
-                      onMouseDown={(e) => { e.preventDefault(); addTag(t.tag) }}
-                      className="w-full flex items-center justify-between px-3 py-2 text-sm hover:bg-muted transition-colors text-left"
-                    >
-                      <span className="text-slate-700">{t.tag}</span>
-                      <span className="text-xs text-slate-500">{t.question_count}q</span>
-                    </button>
-                  </li>
-                ))}
-              </ul>
-            )}
+            {mounted && showTagSuggestions && tagSuggestions.length > 0 && suggestPos &&
+              createPortal(
+                <ul
+                  className="fixed z-50 rounded-lg overflow-hidden shadow-lg bg-white border border-input"
+                  style={{ top: suggestPos.top, left: suggestPos.left, width: suggestPos.width }}
+                >
+                  {tagSuggestions.slice(0, 8).map((t, i) => (
+                    <li key={t.tag}>
+                      <button
+                        type="button"
+                        onMouseDown={(e) => { e.preventDefault(); addTag(t.tag) }}
+                        className={cn(
+                          'w-full flex items-center justify-between px-3 py-2 text-sm transition-colors text-left',
+                          i === highlightIndex ? 'bg-muted' : 'hover:bg-muted',
+                        )}
+                      >
+                        <span className="text-slate-700">{t.tag}</span>
+                        <span className="text-xs text-slate-500">
+                          {t.question_count}{t.source === 'skill' ? 'p' : 'q'}
+                        </span>
+                      </button>
+                    </li>
+                  ))}
+                </ul>,
+                document.body,
+              )
+            }
           </div>
         )}
       </div>
@@ -214,7 +267,7 @@ export function QuestionForm() {
             type="text"
             value={expertSearch}
             onChange={(e) => setExpertSearch(e.target.value)}
-            placeholder={primaryTag ? `Search experts for "${primaryTag}"…` : 'Search experts by name, title, or skill…'}
+            placeholder="Search experts by name or title…"
             className="pl-9 text-sm"
           />
         </div>
@@ -238,7 +291,7 @@ export function QuestionForm() {
           </div>
         ) : (
           <p className="text-xs text-slate-500">
-            {primaryTag || expertSearch ? 'No experts found — try a different search.' : 'Add a tag above to see relevant experts.'}
+            {expertSearch ? 'No experts found — try a different search.' : 'No experts found.'}
           </p>
         )}
       </div>

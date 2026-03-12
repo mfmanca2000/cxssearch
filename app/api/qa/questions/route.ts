@@ -6,6 +6,7 @@ export async function GET(request: Request) {
   const { searchParams } = new URL(request.url)
   const tag      = searchParams.get('tag')
   const status   = searchParams.get('status')
+  const search   = searchParams.get('search')?.trim() || null
   const page     = Math.max(1, Number(searchParams.get('page') ?? 1))
   const limit    = 20
   const offset   = (page - 1) * limit
@@ -31,15 +32,17 @@ export async function GET(request: Request) {
       params.push(status)
       conditions.push(`q.status = $${params.length}`)
     }
+    if (search) {
+      params.push(`%${search}%`)
+      conditions.push(`(q.title ILIKE $${params.length} OR q.body ILIKE $${params.length})`)
+    }
 
     if (conditions.length > 0) sql += ` WHERE ${conditions.join(' AND ')}`
 
     const sort = searchParams.get('sort') ?? 'newest'
-    const orderBy = {
-      newest: 'q.created_at DESC',
-      votes:  'vote_score DESC, q.created_at DESC',
-      active: 'q.updated_at DESC, q.created_at DESC',
-    }[sort] ?? 'q.created_at DESC'
+    const orderBy = search
+      ? `CASE WHEN q.title ILIKE $${params.length} THEN 0 ELSE 1 END, q.created_at DESC`
+      : ({ newest: 'q.created_at DESC', votes: 'vote_score DESC, q.created_at DESC', active: 'q.updated_at DESC, q.created_at DESC' }[sort] ?? 'q.created_at DESC')
     sql += ` GROUP BY q.id ORDER BY ${orderBy} LIMIT ${limit} OFFSET ${offset}`
 
     const result = await query(sql, params)

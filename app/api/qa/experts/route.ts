@@ -30,13 +30,22 @@ export async function GET(request: Request) {
     // 1. Load all users from LDAP (in-process cache, usually instant)
     const users = await ldapGetUsers(BASE_DN)
 
-    // 2. Load all user skills
+    // 2. Load all user skills (neli static data + user-defined DB skills merged)
     let skillsMap: Map<string, string[]>
     if (MOCK_MODE) {
       seedMockSkills(mockUsers, mockSkills)
       skillsMap = getAllMockSkills()
     } else {
-      skillsMap = getNeliSkills() ?? new Map()
+      const neliMap = getNeliSkills() ?? new Map()
+      // Merge DB skills on top of neli skills
+      const dbSkillsResult = await query(`SELECT dn, skill FROM user_skills ORDER BY dn, skill`)
+      skillsMap = new Map(neliMap)
+      for (const row of dbSkillsResult.rows) {
+        const existing = skillsMap.get(row.dn) ?? []
+        if (!existing.includes(row.skill)) {
+          skillsMap.set(row.dn, [...existing, row.skill])
+        }
+      }
     }
 
     // 3. Load Q&A stats per user (across all tags) in one query
@@ -80,9 +89,9 @@ export async function GET(request: Request) {
         if (!titleMatch && !deptMatch && !skillMatch) continue
       }
 
-      // --- Filter: free-text (name, title, dept, skills) ---
+      // --- Filter: free-text (name, title, dept) ---
       if (q) {
-        const haystack = [nameLc, titleLc, deptLc, ...skillsLc].join(' ')
+        const haystack = [nameLc, titleLc, deptLc].join(' ')
         if (!haystack.includes(q)) continue
       }
 

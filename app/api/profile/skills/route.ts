@@ -3,6 +3,7 @@ import { getSession } from '@/lib/session'
 import { query } from '@/lib/db'
 import { getMockSkills, addMockSkill, removeMockSkill, seedMockSkills } from '@/lib/mockSkillsStore'
 import { mockUsers, mockSkills } from '@/lib/mockData'
+import { getNeliSkills } from '@/lib/ldap'
 
 const MOCK_MODE = process.env.MOCK_MODE === 'true'
 
@@ -22,7 +23,10 @@ export async function GET(request: Request) {
       `SELECT skill FROM user_skills WHERE dn = $1 ORDER BY skill`,
       [dn],
     )
-    return NextResponse.json(result.rows.map((r: any) => r.skill as string))
+    const dbSkills: string[] = result.rows.map((r: any) => r.skill as string)
+    const neliSkills: string[] = getNeliSkills()?.get(dn) ?? []
+    const merged = [...new Set([...neliSkills, ...dbSkills])].sort()
+    return NextResponse.json(merged)
   } catch (err) {
     console.error('[profile/skills GET]', err)
     return NextResponse.json([], { status: 500 })

@@ -97,4 +97,5 @@ export interface UserQAProfile {
 export interface TagStat {
   tag: string
   question_count: number
+  source?: 'tag' | 'skill'
 }

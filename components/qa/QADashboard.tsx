@@ -1,13 +1,14 @@
 'use client'
 import { useState, useEffect } from 'react'
 import { motion } from 'framer-motion'
-import { MessageSquare, Inbox, Users } from 'lucide-react'
+import { MessageSquare, Inbox, Users, Search } from 'lucide-react'
 import { useQuestions, useTags, useInbox, useMarkInboxRead, type InboxItem } from '@/hooks/useQA'
 import { QuestionCard } from './QuestionCard'
 import { TagChip } from './TagChip'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
+import { Input } from '@/components/ui/input'
 import { cn } from '@/lib/utils'
 
 type Tab = 'all' | 'inbox' | 'team'
@@ -19,12 +20,22 @@ export function QADashboard() {
   const [activeStatus, setActiveStatus] = useState<string>('')
   const [sort,         setSort]         = useState<SortOption>('newest')
   const [page,         setPage]         = useState(1)
+  const [searchInput,    setSearchInput]    = useState('')
+  const [searchDebounced, setSearchDebounced] = useState('')
+
+  useEffect(() => {
+    const t = setTimeout(() => setSearchDebounced(searchInput), 300)
+    return () => clearTimeout(t)
+  }, [searchInput])
+
+  useEffect(() => { setPage(1) }, [searchDebounced])
 
   const { data: questions, isLoading, isError } = useQuestions({
     tag:    activeTag    || undefined,
     status: activeStatus || undefined,
     sort,
     page,
+    search: searchDebounced || undefined,
   })
   const { data: tags }  = useTags()
   const { data: inbox } = useInbox()
@@ -37,10 +48,16 @@ export function QADashboard() {
     if (tab === 'team'  && (inbox?.team.unread    ?? 0) > 0) markTeamRead.mutate()
   }, [tab]) // eslint-disable-line react-hooks/exhaustive-deps
 
-  const personalQuestions = inbox?.personal.questions ?? []
-  const personalUnread    = inbox?.personal.unread    ?? 0
-  const teamQuestions     = inbox?.team.questions     ?? []
-  const teamUnread        = inbox?.team.unread        ?? 0
+  const filterBySearch = <T extends { title: string; body: string }>(items: T[]): T[] => {
+    if (!searchDebounced) return items
+    const q = searchDebounced.toLowerCase()
+    return items.filter((i) => i.title.toLowerCase().includes(q) || i.body.toLowerCase().includes(q))
+  }
+
+  const personalQuestions = filterBySearch(inbox?.personal.questions ?? [])
+  const personalUnread    = inbox?.personal.unread ?? 0
+  const teamQuestions     = filterBySearch(inbox?.team.questions ?? [])
+  const teamUnread        = inbox?.team.unread    ?? 0
   const teamOuLabel = (() => {
     const ou = inbox?.team.teamOu
     if (!ou) return 'My Team'
@@ -80,13 +97,25 @@ export function QADashboard() {
         ))}
       </div>
 
+      {/* Search bar — always visible */}
+      <div className="relative">
+        <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground pointer-events-none" />
+        <Input
+          type="search"
+          placeholder="Search questions..."
+          value={searchInput}
+          onChange={(e) => setSearchInput(e.target.value)}
+          className="pl-8 h-9 text-sm"
+        />
+      </div>
+
       {/* ── For me tab ── */}
       {tab === 'inbox' && (
         <InboxList
           questions={personalQuestions}
           emptyIcon={<Inbox className="w-12 h-12 mx-auto mb-4 text-slate-300" />}
-          emptyText="No questions directed at you yet"
-          emptySubtext="When someone asks you a question directly, it will appear here."
+          emptyText={searchDebounced ? 'No questions match your search' : 'No questions directed at you yet'}
+          emptySubtext={searchDebounced ? 'Try different keywords or clear the search.' : 'When someone asks you a question directly, it will appear here.'}
           showUnreadDot={(q) => !q.notified_at}
         />
       )}
@@ -96,8 +125,8 @@ export function QADashboard() {
         <InboxList
           questions={teamQuestions}
           emptyIcon={<Users className="w-12 h-12 mx-auto mb-4 text-slate-300" />}
-          emptyText={`No questions directed at ${teamOuLabel} yet`}
-          emptySubtext="When someone asks your team a question, it will appear here."
+          emptyText={searchDebounced ? 'No questions match your search' : `No questions directed at ${teamOuLabel} yet`}
+          emptySubtext={searchDebounced ? 'Try different keywords or clear the search.' : 'When someone asks your team a question, it will appear here.'}
           showUnreadDot={() => false}
         />
       )}
@@ -173,8 +202,14 @@ export function QADashboard() {
               {!questions?.length ? (
                 <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="text-center py-20">
                   <MessageSquare className="w-12 h-12 mx-auto mb-4 text-brand-600 opacity-40" />
-                  <p className="text-slate-500 font-medium">No questions yet</p>
-                  <p className="text-slate-400 text-sm mt-1">Be the first to ask a question!</p>
+                  <p className="text-slate-500 font-medium">
+                    {searchDebounced ? 'No questions match your search' : 'No questions yet'}
+                  </p>
+                  <p className="text-slate-400 text-sm mt-1">
+                    {searchDebounced
+                      ? 'Try different keywords or clear the search.'
+                      : 'Be the first to ask a question!'}
+                  </p>
                 </motion.div>
               ) : (
                 <div className="space-y-3">
