@@ -6,6 +6,7 @@ import { LoginModal } from '@/components/auth/LoginModal'
 import { useToastState, ToastContainer } from '@/components/notifications/NotificationToast'
 import { useNotifications } from '@/hooks/useNotifications'
 import type { AuthUser } from '@/types'
+import { TooltipProvider } from "@/components/ui/tooltip"
 
 function NotificationsWrapper({ children }: { children: React.ReactNode }) {
   const { toasts, showToast, dismiss } = useToastState()
@@ -42,7 +43,9 @@ export function Providers({
     <QueryClientProvider client={queryClient}>
       <AuthProvider initialUser={initialUser}>
         <NotificationsWrapper>
-          {children}
+          <TooltipProvider>
+            {children}
+          </TooltipProvider>
         </NotificationsWrapper>
         <LoginModal />
       </AuthProvider>
