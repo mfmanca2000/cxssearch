@@ -3,6 +3,10 @@ import './globals.css'
 import { getSession } from '@/lib/session'
 import { Providers } from './providers'
 import { Sidebar } from '@/components/layout/Sidebar'
+import { Geist } from "next/font/google";
+import { cn } from "@/lib/utils";
+
+const geist = Geist({subsets:['latin'],variable:'--font-sans'});
 
 export const metadata: Metadata = {
   title: 'CSX Search – People & Q&A',
@@ -18,7 +22,7 @@ export default async function RootLayout({
   const initialUser = session.isLoggedIn ? (session.user ?? null) : null
 
   return (
-    <html lang="en">
+    <html lang="en" className={cn("font-sans", geist.variable)}>
       <head>
         <link rel="preconnect" href="https://fonts.googleapis.com" />
         <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
