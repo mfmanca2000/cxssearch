@@ -44,7 +44,7 @@ export function SearchBar({ value, onChange, total, filtered, loading }: Props) 
           type="text"
           value={value}
           onChange={(e) => onChange(e.target.value)}
-          placeholder="Search by name, title, email, department…"
+          placeholder="Search by name, title, department, skill…"
           className="flex-1 bg-transparent outline-none text-[#1b2a4a] placeholder-slate-400 text-base"
           autoFocus
           spellCheck={false}

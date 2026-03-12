@@ -81,6 +81,11 @@ export interface Expert {
   answer_count: number
   accepted_count: number
   tag?: string
+  phone?: string
+  mobile?: string
+  office?: string
+  photo?: string | null
+  manager?: string
 }
 
 export interface UserQAProfile {

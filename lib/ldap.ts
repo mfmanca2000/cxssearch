@@ -128,7 +128,12 @@ export function getNeliSkills(): Map<string, string[]> | null {
   const { skills } = getNeliData()
   if (!skills) return new Map()
   const map = new Map<string, string[]>()
-  for (const [dn, list] of Object.entries(skills)) map.set(dn, list)
+  for (const [dn, list] of Object.entries(skills)) {
+    const expanded = (list as string[]).flatMap((s) =>
+      s.split(';').map((p) => p.trim()).filter(Boolean)
+    )
+    map.set(dn, expanded)
+  }
   return map
 }
 

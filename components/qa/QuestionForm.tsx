@@ -10,10 +10,11 @@ import { useExperts, useTags } from '@/hooks/useQA'
 import type { OrgNode } from '@/types'
 
 /** Flatten an OrgNode tree into a list of { dn, label } for all non-root nodes. */
-function flattenTree(node: OrgNode, depth = 0): { dn: string; label: string; depth: number }[] {
+function flattenTree(node: OrgNode, depth = 0, parentPath = ''): { dn: string; label: string; depth: number }[] {
   const results: { dn: string; label: string; depth: number }[] = []
-  if (depth > 0) results.push({ dn: node.dn, label: node.name, depth })
-  for (const child of node.children) results.push(...flattenTree(child, depth + 1))
+  const fullPath = parentPath ? `${parentPath} > ${node.name}` : node.name
+  if (depth > 0) results.push({ dn: node.dn, label: fullPath, depth })
+  for (const child of node.children) results.push(...flattenTree(child, depth + 1, fullPath))
   return results
 }
 
@@ -114,7 +115,7 @@ export function QuestionForm() {
           onChange={(e) => setTitle(e.target.value)}
           placeholder="What is your question? Be specific."
           className="w-full px-4 py-3 rounded-xl text-slate-700 placeholder-slate-500 outline-none text-sm"
-          style={{ background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.1)' }}
+          style={{ background: 'rgba(255,255,255,0.8)', border: '1px solid #cbd5e1' }}
           maxLength={200}
           required
         />
@@ -170,13 +171,13 @@ export function QuestionForm() {
               }}
               placeholder="Add a tag (Enter or comma)"
               className="flex-1 px-3 py-2 rounded-lg text-sm text-slate-300 placeholder-slate-500 outline-none"
-              style={{ background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.1)' }}
+              style={{ background: 'rgba(255,255,255,0.8)', border: '1px solid #cbd5e1' }}
             />
             <button
               type="button"
               onClick={() => addTag(tagInput)}
-              className="px-3 py-2 rounded-lg text-slate-400 hover:text-slate-200 transition-colors"
-              style={{ border: '1px solid rgba(255,255,255,0.1)' }}
+              className="px-3 py-2 rounded-lg text-slate-400 hover:text-slate-600 transition-colors"
+              style={{ border: '1px solid #cbd5e1' }}
             >
               <Plus className="w-4 h-4" />
             </button>
@@ -218,7 +219,7 @@ export function QuestionForm() {
             onChange={(e) => setExpertSearch(e.target.value)}
             placeholder={primaryTag ? `Search experts for "${primaryTag}"…` : 'Search experts by name, title, or skill…'}
             className="w-full pl-9 pr-4 py-2 rounded-xl text-sm text-slate-300 placeholder-slate-500 outline-none"
-            style={{ background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.1)' }}
+            style={{ background: 'rgba(255,255,255,0.8)', border: '1px solid #cbd5e1' }}
           />
         </div>
         {experts && experts.length > 0 ? (
@@ -235,7 +236,7 @@ export function QuestionForm() {
                   style={
                     selected
                       ? { background: 'rgba(139,92,246,0.2)', borderColor: 'rgba(139,92,246,0.5)', color: '#c4b5fd' }
-                      : { background: 'rgba(255,255,255,0.03)', borderColor: 'rgba(255,255,255,0.1)', color: '#64748b' }
+                      : { background: '#f8fafc', borderColor: '#cbd5e1', color: '#64748b' }
                   }
                 >
                   {exp.cn}
@@ -266,12 +267,12 @@ export function QuestionForm() {
                 if (ou && !directedTeams.includes(ou)) setDirectedTeams((p) => [...p, ou])
               }}
               className="w-full pl-9 pr-4 py-2 rounded-xl text-sm outline-none appearance-none"
-              style={{ background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.1)', color: '#94a3b8' }}
+              style={{ background: 'rgba(255,255,255,0.8)', border: '1px solid #cbd5e1', color: '#94a3b8' }}
             >
               <option value="">Select a team…</option>
               {teams.map((t) => (
-                <option key={t.dn} value={t.dn} style={{ paddingLeft: `${t.depth * 12}px` }}>
-                  {'  '.repeat(t.depth - 1)}{t.label}
+                <option key={t.dn} value={t.dn}>
+                  {t.label}
                 </option>
               ))}
             </select>

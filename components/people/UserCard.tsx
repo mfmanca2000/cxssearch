@@ -1,6 +1,6 @@
 'use client'
 import { motion } from 'framer-motion'
-import { Mail, Phone, MapPin, Briefcase, MessageSquarePlus } from 'lucide-react'
+import { Mail, Phone, MapPin, Briefcase, MessageSquarePlus, CheckCircle2 } from 'lucide-react'
 import { useRouter } from 'next/navigation'
 import type { User } from '@/types'
 import { Avatar } from './Avatar'
@@ -9,9 +9,12 @@ interface Props {
   user: User
   onClick: (u: User) => void
   index: number
+  skills?: string[]
+  answerCount?: number
+  acceptedCount?: number
 }
 
-export function UserCard({ user, onClick, index }: Props) {
+export function UserCard({ user, onClick, index, skills, answerCount, acceptedCount }: Props) {
   const router = useRouter()
 
   const handleAskExpert = (e: React.MouseEvent) => {
@@ -53,14 +56,37 @@ export function UserCard({ user, onClick, index }: Props) {
         </div>
       </div>
 
-      {user.department && (
-        <span
-          className="self-start text-xs px-2.5 py-1 rounded-full font-medium"
-          style={{ background: '#eff6ff', color: '#1d4ed8', border: '1px solid #bfdbfe' }}
-        >
-          {user.department}
-        </span>
-      )}
+      <div className="flex flex-wrap gap-1.5">
+        {user.department && (
+          <span
+            className="text-xs px-2.5 py-1 rounded-full font-medium"
+            style={{ background: '#eff6ff', color: '#1d4ed8', border: '1px solid #bfdbfe' }}
+          >
+            {user.department}
+          </span>
+        )}
+        {skills && skills.length > 0 && (
+          <>
+            {skills.slice(0, 4).map((s) => (
+              <span
+                key={s}
+                className="text-xs px-2.5 py-1 rounded-full font-medium"
+                style={{ background: '#f5f3ff', color: '#6d28d9', border: '1px solid #ddd6fe' }}
+              >
+                {s}
+              </span>
+            ))}
+            {skills.length > 4 && (
+              <span
+                className="text-xs px-2.5 py-1 rounded-full font-medium"
+                style={{ background: '#f5f3ff', color: '#6d28d9', border: '1px solid #ddd6fe' }}
+              >
+                +{skills.length - 4}
+              </span>
+            )}
+          </>
+        )}
+      </div>
 
       <dl className="space-y-1.5 text-xs text-slate-500">
         {user.mail && (
@@ -96,6 +122,19 @@ export function UserCard({ user, onClick, index }: Props) {
           </div>
         )}
       </dl>
+
+      {/* Q&A stats badge */}
+      {answerCount != null && answerCount > 0 && (
+        <div className="flex items-center gap-2 text-xs text-slate-500">
+          <CheckCircle2 className="w-3.5 h-3.5 text-emerald-500 shrink-0" />
+          <span>
+            {answerCount} answer{answerCount !== 1 ? 's' : ''}
+            {acceptedCount != null && acceptedCount > 0 && (
+              <span className="ml-1 text-emerald-600 font-medium">· {acceptedCount} accepted</span>
+            )}
+          </span>
+        </div>
+      )}
 
       {/* Ask Expert button */}
       <button

@@ -5,9 +5,10 @@ export interface ActiveFilters {
   department: string
   city: string
   country: string
+  skill: string
 }
 
-const EMPTY_FILTERS: ActiveFilters = { department: '', city: '', country: '' }
+const EMPTY_FILTERS: ActiveFilters = { department: '', city: '', country: '', skill: '' }
 
 export function useSearch(
   users: User[],
@@ -18,16 +19,20 @@ export function useSearch(
     const q = query.trim().toLowerCase()
 
     return users.filter((u) => {
+      const skills = (u as any).skills as string[] | undefined
+
       const textOk = !q || [
         u.cn, u.username, u.mail, u.title,
         u.department, u.office, u.city, u.phone, u.mobile,
+        skills?.join(' '),
       ].some((v) => v?.toLowerCase().includes(q))
 
       const deptOk    = !filters.department || u.department === filters.department
       const cityOk    = !filters.city       || u.city       === filters.city
       const countryOk = !filters.country    || u.country    === filters.country
+      const skillOk   = !filters.skill      || skills?.includes(filters.skill)
 
-      return textOk && deptOk && cityOk && countryOk
+      return textOk && deptOk && cityOk && countryOk && skillOk
     })
   }, [users, query, filters])
 }

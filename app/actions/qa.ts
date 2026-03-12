@@ -4,6 +4,7 @@ import { redirect } from 'next/navigation'
 import { getSession } from '@/lib/session'
 import { query } from '@/lib/db'
 import { computeExpertScores } from '@/lib/qa/experts'
+import { sendPushToUser, sendPushToTeam } from '@/lib/notifications'
 
 function requireAuth() {
   return getSession().then((s) => {
@@ -48,6 +49,15 @@ export async function postQuestion(data: {
       )
     }
   }
+
+  // Fire-and-forget push notifications to directed recipients
+  const pushPayload = {
+    title: `New question: ${data.title.slice(0, 80)}`,
+    body: user.cn,
+    url: `/qa/questions/${questionId}`,
+  }
+  for (const dn of data.directed_dns ?? []) sendPushToUser(dn, pushPayload).catch(console.error)
+  for (const ou of data.directed_team_ous ?? []) sendPushToTeam(ou, pushPayload).catch(console.error)
 
   revalidatePath('/qa')
   redirect(`/qa/questions/${questionId}`)
