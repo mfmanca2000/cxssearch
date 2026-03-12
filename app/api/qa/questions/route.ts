@@ -33,7 +33,14 @@ export async function GET(request: Request) {
     }
 
     if (conditions.length > 0) sql += ` WHERE ${conditions.join(' AND ')}`
-    sql += ` GROUP BY q.id ORDER BY q.created_at DESC LIMIT ${limit} OFFSET ${offset}`
+
+    const sort = searchParams.get('sort') ?? 'newest'
+    const orderBy = {
+      newest: 'q.created_at DESC',
+      votes:  'vote_score DESC, q.created_at DESC',
+      active: 'q.updated_at DESC, q.created_at DESC',
+    }[sort] ?? 'q.created_at DESC'
+    sql += ` GROUP BY q.id ORDER BY ${orderBy} LIMIT ${limit} OFFSET ${offset}`
 
     const result = await query(sql, params)
     return NextResponse.json(result.rows)

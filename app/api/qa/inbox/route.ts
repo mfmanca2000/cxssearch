@@ -8,6 +8,16 @@ function ouFromDn(dn: string): string {
   return idx === -1 ? '' : dn.slice(idx + 1)
 }
 
+/**
+ * Resolve the best team OU for a session user.
+ * Prefers the `department` attribute (e.g. "SCS-B2B-TBS-CXS") which maps
+ * directly to the org-tree OU DNs.  Falls back to the DN-derived OU.
+ */
+function resolveTeamOu(user: { dn: string; department?: string }): string {
+  if (user.department?.trim()) return user.department.trim()
+  return ouFromDn(user.dn)
+}
+
 const PERSONAL_Q = `
   SELECT
     q.id, q.title, q.body, q.tags, q.status, q.author_cn, q.author_title,
@@ -33,7 +43,9 @@ const TEAM_Q = `
   JOIN qa_questions q  ON q.id = dt.question_id
   LEFT JOIN qa_votes v ON v.target_type = 'question' AND v.target_id = q.id
   LEFT JOIN qa_answers a ON a.question_id = q.id
-  WHERE $1 = dt.target_ou OR $1 LIKE '%,' || dt.target_ou
+  WHERE $1 = dt.target_ou
+     OR $1 LIKE dt.target_ou || '-%'
+     OR $1 LIKE '%,' || dt.target_ou
   GROUP BY q.id
   ORDER BY q.created_at DESC`
 
@@ -50,7 +62,7 @@ export async function GET() {
     )
   }
 
-  const teamOu = ouFromDn(session.user.dn)
+  const teamOu = resolveTeamOu(session.user)
 
   try {
     const [personalRes, teamRes, lastReadRes] = await Promise.all([
@@ -98,7 +110,7 @@ export async function POST(request: Request) {
 
   try {
     if (scope === 'team') {
-      const teamOu = ouFromDn(session.user.dn)
+      const teamOu = resolveTeamOu(session.user)
       if (teamOu) {
         await query(
           `INSERT INTO qa_team_inbox_reads (user_dn, team_ou, last_read_at)
