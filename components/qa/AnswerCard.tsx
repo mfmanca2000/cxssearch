@@ -59,7 +59,7 @@ export function AnswerCard({ answer, questionAuthorDn, onRefetch }: Props) {
 
       <div className="flex gap-4">
         {/* Vote column */}
-        <VoteButtons targetType="answer" targetId={answer.id} score={Number(answer.vote_score)} />
+        <VoteButtons targetType="answer" targetId={answer.id} score={Number(answer.vote_score)} isOwn={isAnswerAuthor} />
 
         {/* Content */}
         <div className="flex-1 min-w-0">

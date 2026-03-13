@@ -84,7 +84,7 @@ export function QuestionDetail({ id }: Props) {
           <Card>
             <CardContent className="pt-4 space-y-4">
               <div className="flex items-start gap-4">
-                <VoteButtons targetType="question" targetId={question.id} score={Number(question.vote_score)} />
+                <VoteButtons targetType="question" targetId={question.id} score={Number(question.vote_score)} isOwn={isAuthor} />
 
                 <div className="flex-1 min-w-0">
                   {editing ? (

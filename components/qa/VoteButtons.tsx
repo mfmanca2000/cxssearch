@@ -3,6 +3,7 @@ import { useState, useTransition } from 'react'
 import { ChevronUp, ChevronDown } from 'lucide-react'
 import { voteQuestion, voteAnswer } from '@/app/actions/qa'
 import { Button } from '@/components/ui/button'
+import { Tooltip, TooltipTrigger, TooltipContent, TooltipProvider } from '@/components/ui/tooltip'
 import { cn } from '@/lib/utils'
 
 interface Props {
@@ -10,9 +11,10 @@ interface Props {
   targetId: number
   score: number
   vertical?: boolean
+  isOwn?: boolean
 }
 
-export function VoteButtons({ targetType, targetId, score, vertical = true }: Props) {
+export function VoteButtons({ targetType, targetId, score, vertical = true, isOwn = false }: Props) {
   const [isPending, startTransition] = useTransition()
   const [optimisticScore, setOptimisticScore] = useState(score)
 
@@ -35,14 +37,14 @@ export function VoteButtons({ targetType, targetId, score, vertical = true }: Pr
     ? 'flex flex-col items-center gap-1'
     : 'flex items-center gap-2'
 
-  return (
+  const buttons = (
     <div className={containerCls}>
       <Button
         variant="ghost"
         size="icon"
         onClick={() => vote(1)}
-        disabled={isPending}
-        className="h-7 w-7 text-slate-400 hover:text-emerald-600"
+        disabled={isPending || isOwn}
+        className="h-7 w-7 text-slate-400 hover:text-emerald-600 disabled:opacity-40 disabled:cursor-not-allowed"
         aria-label="Upvote"
       >
         <ChevronUp className="w-5 h-5" />
@@ -59,12 +61,25 @@ export function VoteButtons({ targetType, targetId, score, vertical = true }: Pr
         variant="ghost"
         size="icon"
         onClick={() => vote(-1)}
-        disabled={isPending}
-        className="h-7 w-7 text-slate-400 hover:text-red-500"
+        disabled={isPending || isOwn}
+        className="h-7 w-7 text-slate-400 hover:text-red-500 disabled:opacity-40 disabled:cursor-not-allowed"
         aria-label="Downvote"
       >
         <ChevronDown className="w-5 h-5" />
       </Button>
     </div>
+  )
+
+  if (!isOwn) return buttons
+
+  return (
+    <TooltipProvider>
+      <Tooltip>
+        <TooltipTrigger render={<div />}>
+          {buttons}
+        </TooltipTrigger>
+        <TooltipContent>You can't vote on your own post</TooltipContent>
+      </Tooltip>
+    </TooltipProvider>
   )
 }
