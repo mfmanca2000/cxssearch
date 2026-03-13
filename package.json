@@ -13,6 +13,7 @@
   "dependencies": {
     "@base-ui/react": "^1.2.0",
     "@tanstack/react-query": "^5.51.1",
+    "@types/nodemailer": "^7.0.11",
     "@types/web-push": "^3.6.4",
     "@uiw/react-md-editor": "^4.0.4",
     "class-variance-authority": "^0.7.1",
@@ -24,6 +25,7 @@
     "lucide-react": "^0.414.0",
     "next": "^16.1.6",
     "node-cache": "^5.1.2",
+    "nodemailer": "^8.0.2",
     "openid-client": "^6.8.2",
     "pg": "^8.12.0",
     "react": "^19.0.0",

@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server'
 import { getSession } from '@/lib/session'
 import { query } from '@/lib/db'
+import { sendDirectedQuestionEmail } from '@/lib/email'
 
 export async function GET(request: Request) {
   const { searchParams } = new URL(request.url)
@@ -88,6 +89,30 @@ export async function POST(request: Request) {
           [questionId, dn],
         )
       }
+
+      // Send email notifications to directed users who opted in
+      const appUrl = process.env.APP_URL ?? 'http://localhost:3000'
+      const { rows: targets } = await query(
+        `SELECT s.dn, s.mail, s.cn
+         FROM (
+           SELECT dn, mail, cn FROM sso_users WHERE dn = ANY($1)
+         ) s
+         JOIN user_settings us ON us.dn = s.dn
+         WHERE us.email_notifications = TRUE AND s.mail <> ''`,
+        [directed_dns],
+      )
+      await Promise.allSettled(
+        targets.map((t: any) =>
+          sendDirectedQuestionEmail({
+            toName:        t.cn,
+            toEmail:       t.mail,
+            questionId,
+            questionTitle: title.trim(),
+            authorName:    session.user!.cn,
+            appUrl,
+          }).catch((err) => console.error('[email] failed to send to', t.mail, err)),
+        ),
+      )
     }
 
     return NextResponse.json({ id: questionId }, { status: 201 })
