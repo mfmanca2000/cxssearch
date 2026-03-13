@@ -1,10 +1,9 @@
 'use client'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
-import { Users, MessageSquare, HelpCircle, LogOut } from 'lucide-react'
+import { Users, MessageSquare, HelpCircle, LogOut, Settings } from 'lucide-react'
 import { useAuth } from '@/hooks/useAuth'
 import { useInbox } from '@/hooks/useQA'
-import { NotificationPermissionPrompt } from '@/components/notifications/NotificationPermission'
 
 const NAV_ITEMS = [
   { href: '/',       icon: Users,         label: 'People Search' },
@@ -68,7 +67,6 @@ export function SidebarNav({ collapsed = false }: Props) {
             </Link>
           )
         })}
-        {!collapsed && <NotificationPermissionPrompt />}
       </nav>
 
       {user && (
@@ -77,15 +75,17 @@ export function SidebarNav({ collapsed = false }: Props) {
           style={{ padding: collapsed ? '1rem 0' : undefined }}
         >
           {collapsed ? (
-            /* Collapsed: just the avatar + sign-out icon stacked */
+            /* Collapsed: avatar links to settings + sign-out icon */
             <div className="flex flex-col items-center gap-3">
-              <div
-                className="w-7 h-7 rounded-full flex items-center justify-center text-xs font-bold text-white shrink-0"
-                style={{ background: 'linear-gradient(135deg,#1b2a4a,#2563eb)' }}
-                title={user.cn}
-              >
-                {user.cn.charAt(0)}
-              </div>
+              <Link href="/settings" title="Settings">
+                <div
+                  className="w-7 h-7 rounded-full flex items-center justify-center text-xs font-bold text-white shrink-0 hover:opacity-80 transition-opacity"
+                  style={{ background: 'linear-gradient(135deg,#1b2a4a,#2563eb)' }}
+                  title={user.cn}
+                >
+                  {user.cn.charAt(0)}
+                </div>
+              </Link>
               <button
                 onClick={logout}
                 title="Sign out"
@@ -96,7 +96,10 @@ export function SidebarNav({ collapsed = false }: Props) {
             </div>
           ) : (
             <div className="px-3">
-              <div className="flex items-center gap-2 mb-3">
+              <Link
+                href="/settings"
+                className="flex items-center gap-2 mb-3 rounded-lg p-1 -m-1 hover:bg-slate-100 transition-colors group"
+              >
                 <div
                   className="w-7 h-7 rounded-full flex items-center justify-center text-xs font-bold text-white shrink-0"
                   style={{ background: 'linear-gradient(135deg,#1b2a4a,#2563eb)' }}
@@ -107,7 +110,8 @@ export function SidebarNav({ collapsed = false }: Props) {
                   <p className="text-xs font-medium text-[#1b2a4a] truncate">{user.cn}</p>
                   <p className="text-xs text-slate-400 truncate">@{user.username}</p>
                 </div>
-              </div>
+                <Settings className="w-3.5 h-3.5 text-slate-300 group-hover:text-slate-500 shrink-0" />
+              </Link>
               <button
                 onClick={logout}
                 className="flex items-center gap-2 text-xs text-slate-400 hover:text-[#1b2a4a] transition-colors w-full"
